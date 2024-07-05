@@ -1,70 +1,182 @@
-# Getting Started with Create React App
+npm install @reduxjs/toolkit react-redux js-cookie
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+***************************************************
 
-## Available Scripts
 
-In the project directory, you can run:
+import { configureStore } from '@reduxjs/toolkit';
+import authReducer from './authSlice';
 
-### `npm start`
+export const store = configureStore({
+  reducer: {
+    auth: authReducer,
+  },
+});
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+**************************************************
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+import { createSlice } from '@reduxjs/toolkit';
+import Cookies from 'js-cookie';
 
-### `npm test`
+const initialState = {
+  user: null,
+  isAuthenticated: false,
+};
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+const authSlice = createSlice({
+  name: 'auth',
+  initialState,
+  reducers: {
+    setUser: (state, action) => {
+      state.user = action.payload;
+      state.isAuthenticated = !!action.payload;
+    },
+    logout: (state) => {
+      state.user = null;
+      state.isAuthenticated = false;
+      Cookies.remove('token');
+    },
+  },
+});
 
-### `npm run build`
+export const { setUser, logout } = authSlice.actions;
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+export default authSlice.reducer;
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+****************************************************
+import React, { useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { setUser } from './store/authSlice';
+import axios from 'axios';
+import ProtectedRoute from './routes/ProtectedRoute';
+import AdminRoute from './routes/AdminRoute';
+import Login from './components/Auth/Login';
+import Register from './components/Auth/Register';
+import Dashboard from './components/Admin/Dashboard';
+import Home from './components/User/Home';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+axios.defaults.withCredentials = true;
 
-### `npm run eject`
+function App() {
+  const dispatch = useDispatch();
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+  useEffect(() => {
+    const verifyUser = async () => {
+      try {
+        const res = await axios.get('http://localhost:8000/api/auth/verify');
+        dispatch(setUser(res.data.user));
+      } catch (error) {
+        console.error('Error verifying user:', error);
+      }
+    };
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+    verifyUser();
+  }, [dispatch]);
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+  return (
+    <Router>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route element={<ProtectedRoute />}>
+          <Route path="/home" element={<Home />} />
+          <Route element={<AdminRoute />}>
+            <Route path="/dashboard" element={<Dashboard />} />
+          </Route>
+        </Route>
+        <Route path="/" element={<Navigate to="/home" />} />
+      </Routes>
+      <ToastContainer />
+    </Router>
+  );
+}
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+export default App;
 
-## Learn More
+****************************************************
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
 
-To learn React, check out the [React documentation](https://reactjs.org/).
 
-### Code Splitting
+import React from 'react';
+import { Navigate, Outlet } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+const ProtectedRoute = () => {
+  const { isAuthenticated } = useSelector((state) => state.auth);
 
-### Analyzing the Bundle Size
+  return isAuthenticated ? <Outlet /> : <Navigate to="/login" />;
+};
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+export default ProtectedRoute;
 
-### Making a Progressive Web App
+*****************************************************
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+import React from 'react';
+import { Navigate, Outlet } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 
-### Advanced Configuration
+const AdminRoute = () => {
+  const { user, isAuthenticated } = useSelector((state) => state.auth);
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+  return isAuthenticated && user?.role === 'admin' ? <Outlet /> : <Navigate to="/home" />;
+};
 
-### Deployment
+export default AdminRoute;
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+********************************************************
 
-### `npm run build` fails to minify
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { setUser } from '../../store/authSlice';
+import { toast } from 'react-toastify';
+import axios from 'axios';
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+const Login = () => {
+  const [formData, setFormData] = useState({ email: '', password: '' });
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await axios.post('http://localhost:8000/api/auth/login', formData, {
+        withCredentials: true
+      });
+      dispatch(setUser(response.data.user));
+      toast.success('Login successful!');
+      navigate(response.data.user.role === 'admin' ? '/dashboard' : '/home');
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Login failed');
+    }
+  };
+
+  return (
+    // Your login form JSX here
+  );
+};
+
+export default Login;
+
+*****************************************************
+
+import React from 'react';
+import ReactDOM from 'react-dom';
+import { Provider } from 'react-redux';
+import { store } from './store';
+import App from './App';
+
+ReactDOM.render(
+  <React.StrictMode>
+    <Provider store={store}>
+      <App />
+    </Provider>
+  </React.StrictMode>,
+  document.getElementById('root')
+);
