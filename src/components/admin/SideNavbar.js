@@ -29,7 +29,7 @@ const SideNavbar = () => {
             </li>
             <li className="py-2 flex items-center">
               <FaUserPlus className="mr-2" />
-              <a href="#" className="text-lg hover:text-gray-300">Add User</a>
+              <Link to="addNew" className="text-lg hover:text-gray-300">Add User</Link>
             </li>
             <li className="py-2 flex items-center">
               <FaUsers className="mr-2" />

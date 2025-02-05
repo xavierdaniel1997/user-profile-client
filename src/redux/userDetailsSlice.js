@@ -3,7 +3,8 @@ import { createSlice } from "@reduxjs/toolkit";
 const userDetailsSlice = createSlice({
     name: 'userDetails',
     initialState: {
-        userDetailsItem : []
+        userDetailsItem : [],
+        date: "23/01/1997"
     },
     reducers: {
         addUserDetails: (state, action) => {
@@ -11,9 +12,12 @@ const userDetailsSlice = createSlice({
         },
         deleteUserDetail : (state, action) => {
             state.userDetailsItem = state.userDetailsItem.filter((user) => user._id !== action.payload)
+        },
+        showUserDate : (state, action) => {
+            state.date = action.payload
         }
     }
 })
 
-export const {addUserDetails, deleteUserDetail} = userDetailsSlice.actions;
+export const {addUserDetails, deleteUserDetail, showUserDate} = userDetailsSlice.actions;
 export default userDetailsSlice.reducer;

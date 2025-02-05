@@ -25,7 +25,7 @@ const ProtectedRoute = () => {
   const isAuthenticated = useSelector((store) => store.auth.isAuthenticated);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  useEffect(() => { 
     const validateToken = async () => {
       try {
         const response = await axios.get("http://localhost:8000/api/user/verify");
@@ -46,7 +46,7 @@ const ProtectedRoute = () => {
   //   return <div>Loading...</div>; // You can replace this with a spinner or any loading indicator
   // }
 
-  return isAuthenticated ? <Outlet /> : <Navigate to="/login" />;
+  return isAuthenticated ? <Outlet /> : <Navigate to="/" />;
 };
 
 export default ProtectedRoute;
